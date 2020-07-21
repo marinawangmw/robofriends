@@ -1,42 +1,52 @@
 import React, {Component} from 'react';
+import { connect } from 'react-redux';
 import CardList from '../components/CardList';
 import SearchBox from '../components/SearchBox';
 import Scroll from '../components/Scroll';
 import './App.css';
 import ErrorBoundry from '../components/ErrorBoundry';
+import { setSearchField, requestRobots } from '../actions'
+
+// what state do I need listen to and send to props
+// Reemplaza state.searchfield --> lo mete todo en un store grande
+const mapStateToProps = state => {
+  return {
+    //searchField: state.searchField cuando tengo uno solo
+    //cuando tengo mas de uno
+    searchField: state.searchRobots.searchField,
+    robots: state.requestRobots.robots,
+    isPending: state.requestRobots.isPending,
+    error: state.requestRobots.error 
+  }
+}
+
+// What props do I need to listen to and get dispatched
+// Reemplaza onSearchChange
+const mapDispatchToProps = (dispatch) => {
+  return {
+    onSearchChange: (event) => dispatch(setSearchField(event.target.value)),
+    onRequestRobots: () => dispatch(requestRobots())
+  }
+}
 
 class App extends Component {
-  constructor(){
-    super()
-    this.state = {
-      robots:[],
-      searchfield:''
-    }
-  }
 
   componentDidMount(){
-  	//AJAX
-    fetch('https://jsonplaceholder.typicode.com/users')
-      .then(response => { return response.json()})
-      .then(users => this.setState({robots:users}));
-  }
-
-  onSearchChange = (event) => { //Event listener
-    this.setState({searchfield:event.target.value})
+  	this.props.onRequestRobots();
   }
 
   render() {
-    const {robots, searchfield} = this.state;
+    const { searchField, onSearchChange, robots, isPending } = this.props;
     const filteredRobots = robots.filter(robot => {
-      return robot.name.toLowerCase().includes(searchfield.toLowerCase())
+      return robot.name.toLowerCase().includes(searchField.toLowerCase())
     })
     
-    return !robots.length ?
+    return isPending ?
       <h1 className='tc f1'>Loading...</h1>:
       (
         <div className='tc'>
           <h1 className='f1 '>RobotFriends</h1>
-          <SearchBox searchChange={this.onSearchChange} />
+          <SearchBox searchChange={onSearchChange} />
           <Scroll>
             <ErrorBoundry>
               <CardList robots={filteredRobots}/>
@@ -47,4 +57,4 @@ class App extends Component {
   }
 }
 
-export default App;
+export default connect(mapStateToProps, mapDispatchToProps)(App);
